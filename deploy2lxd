@@ -1,0 +1,115 @@
+# This file is part of Foobar.
+#
+# Foobar is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Foobar is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+
+#! /bin/bash
+
+
+function help {
+	echo "help entrys"
+	exit
+}
+
+function push {
+	echo "pushing project to remote..."
+	push_files
+	push_db
+	echo "done."
+}
+
+function pull {
+	echo "pulling project from remote..."
+	pull_files
+	pull_db
+	echo "done."
+}
+
+function push_files {
+	echo "pushing files..."
+	rsync -az --exclude $EXCLUDES -e ssh . $REMOTE_USERNAME@$REMOTE_NAME:$CONTAINER_LOCATION$CONTAINER_NAME/"rootfs"$DEPLOY_ROOT/ --progress
+	echo  "done."
+}
+
+function push_db {
+	echo "pushing database..."
+	echo "creating database dump..."
+		mysqldump -u$LOCAL_DATABASE_USER -p$LOCAL_DATABASE_PASSWORD $LOCAL_DATABASE_NAME > /tmp/deploy2lxd.sql
+	echo "done."
+	echo "uploading dump to remote..."
+		rsync -az -e ssh /tmp/deploy2lxd.sql $REMOTE_USERNAME@$REMOTE_NAME:/tmp/
+	echo "done."
+	echo "importing database dump on remote..."
+		ssh $REMOTE_USERNAME@$REMOTE_NAME -- lxc exec $CONTAINER_NAME -- mysql -u$REMOTE_DATABASE_USER -p$REMOTE_DATABASE_PASSWORD -D$REMOTE_DATABASE_NAME <  /tmp/deploy2lxd.sql
+	echo "done."
+
+	echo "cleaning up..."
+		ssh $REMOTE_USERNAME@$REMOTE_NAME rm /tmp/deploy2lxd.sql
+		rm /tmp/deploy2lxd.sql
+	echo "sucessfully pushed database to remote."
+}
+
+function pull_files {
+	echo "pulling files..."
+	rsync -aqz --exclude $EXCLUDES -e ssh $REMOTE_USERNAME@$REMOTE_NAME:$CONTAINER_LOCATION$CONTAINER_NAME/"rootfs"$DEPLOY_ROOT/ . --progress
+	echo  "done."
+}
+
+function pull_db {
+	echo "pulling database..."
+	echo "creating database dump..."
+		ssh $REMOTE_USERNAME@$REMOTE_NAME -- lxc exec $CONTAINER_NAME -- mysqldump -u$REMOTE_DATABASE_USER -p$REMOTE_DATABASE_PASSWORD $REMOTE_DATABASE_NAME > /tmp/deploy2lxd.sql
+	echo "done."
+	echo "downloading dump from remote..."
+		rsync -aqz -e ssh $REMOTE_USERNAME@$REMOTE_NAME:/tmp/deploy2lxd.sql /tmp/
+	echo "done."
+	echo "importing database dump locally..."
+		mysql -u$LOCAL_DATABASE_USER -p$LOCAL_DATABASE_PASSWORD -D$LOCAL_DATABASE_NAME <  /tmp/deploy2lxd.sql
+	echo "done."
+
+	echo "cleaning up..."
+		ssh $REMOTE_USERNAME@$REMOTE_NAME rm /tmp/deploy2lxd.sql
+		rm /tmp/deploy2lxd.sql
+	echo "sucessfully pulled database from remote."
+}
+
+###########################################################
+# main function                                           #
+# deploy2lxd starts here                                  #
+###########################################################
+
+PROJECT=$(pwd)
+MODE=$1
+
+if [ "$MODE" != "pull" ] && [ "$MODE" != "push" ]; then
+	help
+fi
+
+CONFIG=".deploy2lxd"
+
+if [ ! -f $CONFIG ]; then
+	echo "no configuration found."
+	help
+fi
+
+echo "found configuration."
+
+echo "reading..."
+source $CONFIG
+echo "done."
+
+if [ "$MODE" == "pull" ]; then
+	pull
+else
+	push
+fi
