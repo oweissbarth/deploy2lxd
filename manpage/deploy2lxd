@@ -1,0 +1,80 @@
+.TH  deploy2lxd 1 "27 October 2016" "0.1"
+
+.SH NAME
+deploy2lxd - easy and fast website/app deployment to lxd containers
+
+.SH SYNOPSIS
+deploy2lxd  push|pull [project]
+
+.SH DESCRIPTION
+deploy2lxd is a command line tool to pull and push website/apps between a local developement environment and a remote staging/production environment located within a lxd container.
+A per project configuration file allow customization of deployment settings (e.g. server hostname, container name/location, ...).
+Once configured the deployment is done with a single command.
+
+.SH OPTIONS
+No options currently
+
+
+.SH FILES
+deploy2lxd needs a configuration file in the project directory. The following parameters are supported.
+
+.P
+.BR REMOTE_NAME
+The hostname or ip address of the remote server
+
+.P
+.BR REMOTE_USERNAME
+The username to log into the remote server.
+
+.P
+.BR CONTAINER_LOCATION
+The remote path to the container location. Usually /var/lib/lxd/containers/
+
+.P
+.BR CONTAINER_NAME
+The name of the lxd container to deploy to.
+
+.P
+.BR LOCAL_DATABASE_NAME
+The name of the local database.
+
+.P
+.BR LOCAL_DATABASE_USER
+The user of the local database.
+
+.P
+.BR LOCAL_DATABASE_PASSWORD
+The password for LOCAL_DATABASE_USER on the local database.
+
+.P
+.BR REMOTE_DATABASE_NAME
+The name of the remote database.
+
+.P
+.BR REMOTE_DATABASE_USER
+The user of the remote database.
+
+.P
+.BR REMOTE_DATABASE_PASSWORD
+The password for REMOTE_DATABASE_USER on the remote database.
+
+
+.P
+.BR EXCLUDES
+A space seperated list of files, folder or patterns to not push/pull
+
+.P
+.BR NO_DB
+If set the database will not be pushed or pulled
+
+.SH AUTHOR
+This manpage was written by Oliver Weissbarth <mail@oweissbarth.de>.
+
+.SH BUGS
+Not really bugs but stuff that still has to be implemented:
+.P
+- add automatic url replace
+.P
+- add configuration wizard
+.P
+- allow specification of permissions and owners

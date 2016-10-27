@@ -17,7 +17,8 @@
 
 
 function help {
-	echo "help entrys"
+	echo "deploy2lxd  push|pull [project]"
+	echo "for more information refer to man deploy2lxd"
 	exit
 }
 
