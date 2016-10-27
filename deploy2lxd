@@ -24,14 +24,18 @@ function help {
 function push {
 	echo "pushing project to remote..."
 	push_files
-	push_db
+	if [ -z $NO_DB ]; then
+		push_db
+	fi
 	echo "done."
 }
 
 function pull {
 	echo "pulling project from remote..."
 	pull_files
-	pull_db
+	if [ -z $NO_DB ]; then
+		pull_db
+	fi
 	echo "done."
 }
 
